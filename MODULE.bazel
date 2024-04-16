@@ -14,7 +14,7 @@ local_path_override(
 # see https://registry.bazel.build/ for a list of available packages
 
 bazel_dep(name = "platforms", version = "0.0.8")
-bazel_dep(name = "rules_pkg", version = "0.9.1")
+bazel_dep(name = "rules_pkg", version = "0.10.1")
 bazel_dep(name = "rules_nodejs", version = "6.0.3")
 bazel_dep(name = "rules_python", version = "0.31.0")
 bazel_dep(name = "bazel_skylib", version = "1.5.0")
@@ -24,7 +24,7 @@ bazel_dep(name = "fmt", version = "10.0.0")
 bazel_dep(name = "rules_dotnet", version = "0.15.1")
 
 dotnet = use_extension("@rules_dotnet//dotnet:extensions.bzl", "dotnet")
-dotnet.toolchain(dotnet_version = "8.0.200")
+dotnet.toolchain(dotnet_version = "8.0.101")
 use_repo(dotnet, "dotnet_toolchains")
 
 register_toolchains("@dotnet_toolchains//:all")
