@@ -193,50 +193,32 @@ func ExtractWithFlags(buildFlags []string, patterns []string) error {
 
 	log.Println("Starting to extract packages.")
 
-	sep := regexp.QuoteMeta(string(filepath.Separator))
-	// if a path matches this regexp, we don't want to extract this package. Currently, it checks
-	//   - that the path does not contain a `..` segment, and
-	//   - the path does not contain a `vendor` directory.
-	noExtractRe := regexp.MustCompile(`.*(^|` + sep + `)(\.\.|vendor)($|` + sep + `).*`)
-
 	// extract AST information for all packages
 	packages.Visit(pkgs, func(pkg *packages.Package) bool {
 		return true
 	}, func(pkg *packages.Package) {
-		for root, _ := range wantedRoots {
-			pkgInfo := pkgInfos[pkg.PkgPath]
-			relDir, err := filepath.Rel(root, pkgInfo.PkgDir)
-			if err != nil || noExtractRe.MatchString(relDir) {
-				// if the path can't be made relative or matches the noExtract regexp skip it
-				continue
-			}
+		pkgInfo := pkgInfos[pkg.PkgPath]
+		extraction.extractPackage(pkg)
 
-			extraction.extractPackage(pkg)
-
-			modDir := pkgInfo.ModDir
-			if modDir == "" {
-				modDir = pkgInfo.PkgDir
-			}
-			if modDir != "" {
-				modPath := filepath.Join(modDir, "go.mod")
-				if util.FileExists(modPath) {
-					log.Printf("Extracting %s", modPath)
-					start := time.Now()
-
-					err := extraction.extractGoMod(modPath)
-					if err != nil {
-						log.Printf("Failed to extract go.mod: %s", err.Error())
-					}
-
-					end := time.Since(start)
-					log.Printf("Done extracting %s (%dms)", modPath, end.Nanoseconds()/1000000)
-				}
-			}
-
-			return
+		modDir := pkgInfo.ModDir
+		if modDir == "" {
+			modDir = pkgInfo.PkgDir
 		}
+		if modDir != "" {
+			modPath := filepath.Join(modDir, "go.mod")
+			if util.FileExists(modPath) {
+				log.Printf("Extracting %s", modPath)
+				start := time.Now()
 
-		log.Printf("Skipping dependency package %s.", pkg.PkgPath)
+				err := extraction.extractGoMod(modPath)
+				if err != nil {
+					log.Printf("Failed to extract go.mod: %s", err.Error())
+				}
+
+				end := time.Since(start)
+				log.Printf("Done extracting %s (%dms)", modPath, end.Nanoseconds()/1000000)
+			}
+		}
 	})
 
 	extraction.WaitGroup.Wait()
