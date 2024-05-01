@@ -108,9 +108,8 @@ module Public {
   /**
    * A node in a data flow graph.
    *
-   * A node can be either an IR instruction or an SSA definition.
-   * Such nodes are created with `DataFlow::instructionNode`
-   * and `DataFlow::ssaNode` respectively.
+   * A node can be an IR instruction, SSA definition, function name,
+   * or other miscellaneous things.
    */
   class Node extends TNode {
     /** Gets the function to which this node belongs. */
