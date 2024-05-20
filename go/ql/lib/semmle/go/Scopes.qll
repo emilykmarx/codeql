@@ -89,6 +89,7 @@ class Entity extends @object {
    * Gets the name of this entity.
    *
    * Anonymous entities (such as the receiver variables of interface methods) have the empty string as their name.
+   * ^ Really? Based on test, not true
    */
   string getName() { objects(this, _, result) }
 

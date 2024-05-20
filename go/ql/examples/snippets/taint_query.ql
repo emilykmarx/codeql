@@ -1,27 +1,33 @@
-import go
-import util
 
-module Config implements DataFlow::ConfigSig {
+
+
+/* Boilerplate for path queries */
+import go
+import taint_policy
+
+signature class SourceSig extends DataFlow::Node;
+signature class SinkSig extends DataFlow::Node;
+module Config<SourceSig Source, SinkSig Sink> implements DataFlow::ConfigSig {
   predicate isSource(DataFlow::Node source) {
-    exists(Field f, Write w |
-      f.hasQualifiedName("command-line-arguments", "dnsConfig", "search") and
-      w.writesField(_, f, source)
-    )
+    source instanceof Source
   }
 
   predicate isSink(DataFlow::Node sink) {
-    exists(Function f | f.hasQualifiedName("net", "dnsPacketRoundTrip")
-      and sink = f.getACall().getArgument(3))
+    sink instanceof Sink
   }
 }
-module Flow = TaintTracking::Global<Config>;
+
+module MyConfig = Config<WatchedVar, TaintedVar>;
+module Flow = TaintTracking::Global<MyConfig>;
 import Flow::PathGraph
 
-/*
 from Flow::PathNode source, Flow::PathNode sink
 where Flow::flowPath(source, sink)
-select source, sink
-*/
+and source != sink
+select source.getNode().getStartColumn() as start, // For Delve to watch
+source as source_, sink as sink_, "Fake" as fake
+
+// TODO sep query for no sources
 
 // PARTIAL QUERIES
 int explorationLimit() { result = 5000 }
@@ -44,10 +50,12 @@ predicate adhocPartialFlowRev(Callable c, MyPartialFlowRev::PartialPathNode n, D
   )
 }
 
+/*
 from Callable c, MyPartialFlowFwd::PartialPathNode n, DataFlow::Node src, int dist
-where Config::isSource(src)
+where MyConfig::isSource(src)
 and adhocPartialFlowFwd(c, n, src, dist)
 select src, n, c, n.getNode().getStartLine() as line order by line
+*/
 
 /*
 from Callable c, MyPartialFlowRev::PartialPathNode n, DataFlow::Node snk, int dist
